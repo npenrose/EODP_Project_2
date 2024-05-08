@@ -15,8 +15,86 @@ def age_to_int(age):
     return None
 
 
+def convert_special_character(string):
+    character_conversions = {'©': 'e', '«': 'e', '¨': 'e',
+                             '¼': 'u',
+                             '¤': 'a', '£': 'a', '¡': 'a', ' ': 'a',
+                             '¶': 'o', '³': 'o', 'µ': 'o', '²': 'o',
+                             '­': 'i', '¯': 'i',
+                             '§': 'c',
+                             '±': 'n'}
+    new_string = ''
+    corrupted_character = False
+    prev_char = ''
+    prev_corrupted = ''
+
+    for char in string:
+        if char == 'ã' and not corrupted_character:
+            corrupted_character = True
+            prev_corrupted = char
+
+        elif char in character_conversions.keys():
+            new_string += character_conversions[char]
+            prev_char = character_conversions[char]
+            corrupted_character = False
+
+        elif char == '?' and prev_corrupted != 'ƒ':
+            if prev_char == ' ':
+                new_string += 'o'
+                prev_char = 'o'
+
+            else:
+                new_string += 'ss'
+                prev_char = 'ss'
+
+            corrupted_character = False
+
+        elif not corrupted_character:
+            new_string += char
+            prev_char = char
+
+        else:
+            prev_corrupted = char
+
+    return new_string
+
+
+def tokenize_words(string):
+    punctuation = ['.', ',', ';', ':', '?', '!', '-', '/', '+', '$', '%', '~']
+    unwanted_punctuation = [R'\\', '<', '>', '|']
+    words = []
+    word = ''
+    delimiter = ' '
+
+    string = string.replace('"', '')
+
+    for char in string:
+        if char == delimiter:
+            if word:
+                words.append(word)
+                word = ''
+        elif char in punctuation:
+            if word != '':
+                words.append(word)
+            words.append(char)
+            word = ''
+        elif char not in unwanted_punctuation:
+            word += char
+
+    if word:
+        words.append(word)
+
+    if words:
+        new_string = words[0]
+        for w in words[1:]:
+            new_string += ' ' + w
+        return new_string
+    else:
+        return string
+
+
 # create dataframes from csv files
-books_df = pd.read_csv('data/BX-Books.csv')
+books_df = pd.read_csv('data/BX-Books.csv', encoding='windows-1252')
 ratings_df = pd.read_csv('data/BX-Ratings.csv')
 users_df = pd.read_csv('data/BX-Users.csv')
 
@@ -42,6 +120,14 @@ users_df = users_df.dropna(subset=['User-Age'])
 books_df = books_df.sort_values(by=['Book-Author', 'Book-Title'], ascending=True)
 books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: x.lower() if isinstance(x, str) else None)
 books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: x.lower() if isinstance(x, str) else None)
+
+# convert weird characters to unicode
+books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: tokenize_words(x))
+books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: tokenize_words(x))
+
+# remove arbitrary punctuation and add space before and after punctuation
+books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: convert_special_character(x) if 'ã' in x else x)
+books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: convert_special_character(x) if 'ã' in x else x)
 
 sorted_books = books_df[['Book-Author', 'Book-Title', 'ISBN']].copy()
 sorted_books.to_csv('Books.csv')
