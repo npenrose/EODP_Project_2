@@ -33,12 +33,14 @@ def convert_special_character(string):
             corrupted_character = True
             prev_corrupted = char
 
-        elif char in character_conversions.keys():
+        elif corrupted_character and char in character_conversions.keys():
             new_string += character_conversions[char]
             prev_char = character_conversions[char]
             corrupted_character = False
 
-        elif char == '?' and prev_corrupted != 'ƒ':
+        elif corrupted_character and char == '?' and prev_corrupted != '':
+            corrupted_character = False
+            prev_corrupted = ''
             if prev_char == ' ':
                 new_string += 'o'
                 prev_char = 'o'
@@ -46,8 +48,6 @@ def convert_special_character(string):
             else:
                 new_string += 'ss'
                 prev_char = 'ss'
-
-            corrupted_character = False
 
         elif not corrupted_character:
             new_string += char
@@ -60,13 +60,14 @@ def convert_special_character(string):
 
 
 def tokenize_words(string):
-    punctuation = ['.', ',', ';', ':', '?', '!', '-', '/', '+', '$', '%', '~']
-    unwanted_punctuation = [R'\\', '<', '>', '|']
+    punctuation = ['.', ',', ';', ':', '?', '!', '-', '/', '+', '$', '%', '~', '(', ')']
+    unwanted_punctuation = ['<', '>', '|']
     words = []
     word = ''
     delimiter = ' '
 
-    string = string.replace('"', '')
+    string = string.replace('', '')
+    string = string.replace('\\', '')
 
     for char in string:
         if char == delimiter:
@@ -85,6 +86,9 @@ def tokenize_words(string):
         words.append(word)
 
     if words:
+        while words[-1] == '.':
+            words.pop()
+
         new_string = words[0]
         for w in words[1:]:
             new_string += ' ' + w
@@ -93,8 +97,23 @@ def tokenize_words(string):
         return string
 
 
+def create_title_substring(string):
+    punctuation = [';', ':', '?', '!', '~', '(']
+    title_substring = ''
+
+    for char in string:
+        if char in punctuation:
+            if title_substring:
+                title_substring = title_substring.strip(title_substring[-1])
+            return title_substring
+
+        title_substring += char
+
+    return string
+
+
 # create dataframes from csv files
-books_df = pd.read_csv('data/BX-Books.csv', encoding='windows-1252')
+books_df = pd.read_csv('data/BX-Books.csv')
 ratings_df = pd.read_csv('data/BX-Ratings.csv')
 users_df = pd.read_csv('data/BX-Users.csv')
 
@@ -121,26 +140,31 @@ books_df = books_df.sort_values(by=['Book-Author', 'Book-Title'], ascending=True
 books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: x.lower() if isinstance(x, str) else None)
 books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: x.lower() if isinstance(x, str) else None)
 
-# convert weird characters to unicode
-books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: tokenize_words(x))
-books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: tokenize_words(x))
+books_df.to_csv('Books-Test.csv')
 
-# remove arbitrary punctuation and add space before and after punctuation
+# convert corrupted characters
 books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: convert_special_character(x) if 'ã' in x else x)
 books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: convert_special_character(x) if 'ã' in x else x)
 
-sorted_books = books_df[['Book-Author', 'Book-Title', 'ISBN']].copy()
+# fix inconsistencies in book title and author strings
+books_df['Book-Author'] = books_df['Book-Author'].apply(lambda x: tokenize_words(x))
+books_df['Book-Title'] = books_df['Book-Title'].apply(lambda x: tokenize_words(x))
+
+# combine duplicate books
+# if there is punctuation, check other works by the same author and check for matches before colon
+books_df['Title-Substring'] = books_df['Book-Title'].apply(lambda x: create_title_substring(x))
+
+# check status of preprocessing
+sorted_books = books_df[['Book-Author', 'Book-Title', 'Title-Substring', 'ISBN']].copy()
 sorted_books.to_csv('Books.csv')
 
-# remove anything inside parenthesis
-
-# if there is a colon, check other works by the same author and check for matches before colon
-
-
 # merge all books, rating, and user data and remove unneeded columns
-merged_data = pd.merge(ratings_df, books_df, on='ISBN', how='inner')
+users_df = users_df.drop(columns=['User-Country', 'User-City'])
+merged_data = pd.merge(ratings_df, sorted_books, on='ISBN', how='inner')
 merged_data = pd.merge(merged_data, users_df, on='User-ID', how='inner')
-merged_data = merged_data.drop(columns=['User-Country', 'User-City', 'Book-Publisher'])
+
+merged_data = merged_data.sort_values(by=['Book-Author', 'Book-Title'], ascending=True)
+merged_data.to_csv('Merged-Data.csv')
 
 # histogram of age distribution
 bins = binned_statistic(users_df['User-Age'], users_df['User-Age'], bins=10, statistic='mean')
@@ -173,11 +197,13 @@ fig.suptitle('Frequency of Ratings per Age Group')
 fig.savefig('age_and_ratings_5.png', format='png')
 
 # create new dataframe of users in the targeted age range
-target_users = users_df[(users_df['User-Age'] >= 25) & (users_df['User-Age'] <= 40)]
-target_users_ratings = merged_data[(merged_data['User-Age'] >= 25) & (merged_data['User-Age'] <= 40)]
+target_users = users_df[(users_df['User-Age'] >= 25) & (users_df['User-Age'] <= 40)].copy()
+target_users_ratings = merged_data[(merged_data['User-Age'] >= 25) & (merged_data['User-Age'] <= 40)].copy()
+
+target_users_ratings['Title-and-Author'] = target_users_ratings['Title-Substring'] + ' by ' + target_users_ratings['Book-Author']
 
 # find the total number of and average ratings for each book
-book_ratings = target_users_ratings.groupby('Book-Title').agg(
+book_ratings = target_users_ratings.groupby('Title-and-Author').agg(
     num_ratings=pd.NamedAgg(column='Book-Rating', aggfunc='count'),
     avg_rating=pd.NamedAgg(column='Book-Rating', aggfunc='mean')
 )
@@ -187,3 +213,9 @@ author_ratings = target_users_ratings.groupby('Book-Author').agg(
     num_ratings=pd.NamedAgg(column='Book-Rating', aggfunc='count'),
     avg_rating=pd.NamedAgg(column='Book-Rating', aggfunc='mean')
 )
+
+book_ratings = book_ratings.sort_values(by=['avg_rating'], ascending=False)
+author_ratings = author_ratings.sort_values(by=['avg_rating'], ascending=False)
+
+book_ratings.to_csv('book_ratings.csv')
+author_ratings.to_csv('author_ratings.csv')
