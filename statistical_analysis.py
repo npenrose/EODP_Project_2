@@ -25,5 +25,5 @@ def display_recommendations(user_id, num_recommendations=5):
         book_title = Merged_Data_df[Merged_Data_df['ISBN'] == isbn]['Book-Title'].values[0]
         print(f"{book_title} - Predicted Rating: {score:.2f}")
 
-user_id = 81
+user_id = 89070
 display_recommendations(user_id, 5)
