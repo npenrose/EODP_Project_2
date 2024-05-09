@@ -1,9 +1,9 @@
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 
-Merged-Data_df = pd.read_csv('Merged-Data.csv')
+Merged_Data_df = pd.read_csv('Merged-Data.csv')
 
-ratings_matrix = Merged-Data_df.pivot(index='User-ID', columns='ISBN', values='Book-Rating').fillna(0)
+ratings_matrix = Merged_Data_df.pivot(index='User-ID', columns='ISBN', values='Book-Rating').fillna(0)
 
 user_similarity = cosine_similarity(ratings_matrix)
 user_similarity_df = pd.DataFrame(user_similarity, index=ratings_matrix.index, columns=ratings_matrix.index)
@@ -22,7 +22,7 @@ def display_recommendations(user_id, num_recommendations=5):
     recommendations = recommend_books(user_id, num_recommendations)
     print(f"User {user_id} may like the following books based on similar users:")
     for isbn, score in recommendations.items():
-        book_title = Merged-Data_df[Merged-Data_df['ISBN'] == isbn]['Book-Title'].values[0]
+        book_title = Merged_Data_df[Merged_Data_df['ISBN'] == isbn]['Book-Title'].values[0]
         print(f"{book_title} - Predicted Rating: {score:.2f}")
 
 user_id = 81
