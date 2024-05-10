@@ -23,7 +23,7 @@ author_similarity_df = pd.DataFrame(author_similarity, index=author_ratings.colu
 
 # Calculate average similarity
 mean_similarity = author_similarity_df.values[np.triu_indices_from(author_similarity_df, k=1)].mean()
-print(f"average smilarity between age 23 and 32: {mean_similarity:.2f}")
+print(f"average smilarity between age 23 and 33: {mean_similarity:.2f}")
 
 # show average similarity
 plt.hist(author_similarity_df.values[np.triu_indices_from(author_similarity_df, k=1)], bins=20, edgecolor='black')
