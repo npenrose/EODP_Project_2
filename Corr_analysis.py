@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv('output files/Merged-Data.csv')
 
-filtered_df = df[(df['User-Age'] >= 23) & (df['User-Age'] <= 32)]
+filtered_df = df[(df['User-Age'] >= 23) & (df['User-Age'] <= 33)]
 
 # Calculate the number of ratings per author and select only those authors with sufficient data
 author_count = filtered_df.groupby('Book-Author').size()
@@ -23,7 +23,7 @@ author_similarity_df = pd.DataFrame(author_similarity, index=author_ratings.colu
 
 # Calculate average similarity
 mean_similarity = author_similarity_df.values[np.triu_indices_from(author_similarity_df, k=1)].mean()
-print(f"average smilarity between age 23 and 32: {mean_similarity:.2f}")
+print(f"average smilarity between age 23 and 33: {mean_similarity:.2f}")
 
 # show average similarity
 plt.hist(author_similarity_df.values[np.triu_indices_from(author_similarity_df, k=1)], bins=20, edgecolor='black')
