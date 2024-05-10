@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Load the dataset for user-based collaborative filtering
-Merged_Data_df = pd.read_csv('Merged-Data.csv')
+Merged_Data_df = pd.read_csv('output files/Merged-Data.csv')
 
 # Create a pivot table for user ratings; fill missing values with 0
 ratings_matrix = Merged_Data_df.pivot(index='User-ID', columns='ISBN', values='Book-Rating').fillna(0)

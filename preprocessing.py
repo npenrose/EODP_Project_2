@@ -176,6 +176,16 @@ plt.xticks(bins.bin_edges)
 fig.suptitle('Distribution of Users by Age')
 fig.savefig('age_distribution.png', format='png')
 
+# histogram of ratings per age group with bin size = 15
+bins = binned_statistic(merged_data['User-Age'], merged_data['User-Age'], bins=15, statistic='mean')
+fig = plt.figure()
+plt.grid()
+plt.hist(merged_data['User-Age'], bins=bins.bin_edges)
+plt.xlabel('User Age')
+plt.xticks(bins.bin_edges)
+fig.suptitle('Frequency of Ratings per Age Group')
+fig.savefig('age_and_ratings_15.png', format='png')
+
 # histogram of ratings per age group with bin size = 10
 bins = binned_statistic(merged_data['User-Age'], merged_data['User-Age'], bins=10, statistic='mean')
 fig = plt.figure()

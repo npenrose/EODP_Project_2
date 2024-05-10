@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('Merged-Data.csv')
+df = pd.read_csv('output files/Merged-Data.csv')
 
 filtered_df = df[(df['User-Age'] >= 23) & (df['User-Age'] <= 32)]
 
