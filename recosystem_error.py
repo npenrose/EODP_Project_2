@@ -53,7 +53,7 @@ print(f'Mean Absolute Error: {mae:.2f}')
 
 # Calculate average similarity
 mean_similarity = author_similarity_df.values[np.triu_indices_from(author_similarity_df, k=1)].mean()
-print(f"average similarity between age 23 and 32: {mean_similarity:.2f}")
+print(f"average similarity between age 23 and 33: {mean_similarity:.2f}")
 
 # Show average similarity
 plt.hist(author_similarity_df.values[np.triu_indices_from(author_similarity_df, k=1)], bins=20, edgecolor='black')
