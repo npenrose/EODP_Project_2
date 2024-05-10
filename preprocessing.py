@@ -200,22 +200,15 @@ fig.savefig('age_and_ratings_5.png', format='png')
 target_users = users_df[(users_df['User-Age'] >= 25) & (users_df['User-Age'] <= 40)].copy()
 target_users_ratings = merged_data[(merged_data['User-Age'] >= 25) & (merged_data['User-Age'] <= 40)].copy()
 
-target_users_ratings['Title-and-Author'] = target_users_ratings['Title-Substring'] + ' by ' + target_users_ratings['Book-Author']
-
 # find the total number of and average ratings for each book
+target_users_ratings['Title-and-Author'] = target_users_ratings['Title-Substring'] + ' by ' + target_users_ratings['Book-Author']
 book_ratings = target_users_ratings.groupby('Title-and-Author').agg(
     num_ratings=pd.NamedAgg(column='Book-Rating', aggfunc='count'),
     avg_rating=pd.NamedAgg(column='Book-Rating', aggfunc='mean')
 )
 
-# find the total number of and average ratings for each author
-author_ratings = target_users_ratings.groupby('Book-Author').agg(
-    num_ratings=pd.NamedAgg(column='Book-Rating', aggfunc='count'),
-    avg_rating=pd.NamedAgg(column='Book-Rating', aggfunc='mean')
-)
+book_ratings_avg = book_ratings.sort_values(by=['avg_rating'], ascending=False).copy()
+book_ratings_total = book_ratings.sort_values(by=['num_ratings'], ascending=False).copy()
 
-book_ratings = book_ratings.sort_values(by=['avg_rating'], ascending=False)
-author_ratings = author_ratings.sort_values(by=['avg_rating'], ascending=False)
-
-book_ratings.to_csv('book_ratings.csv')
-author_ratings.to_csv('author_ratings.csv')
+book_ratings_avg.to_csv('book_ratings_avg.csv')
+book_ratings_total.to_csv('book_ratings_total.csv')
