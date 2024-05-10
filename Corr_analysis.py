@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv('Merged-Data.csv')
 
-filtered_df = df[(df['User-Age'] >= 23) & (df['User-Age'] <= 32)]
+filtered_df = df[(df['User-Age'] >= 23) & (df['User-Age'] <= 33)]
 
 # Calculate the number of ratings per author and select only those authors with sufficient data
 author_count = filtered_df.groupby('Book-Author').size()
